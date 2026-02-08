@@ -146,3 +146,9 @@ itching, skin_rash, redness
 * 🧠 Image-based disease detection using CNNs
 
 
+![WhatsApp Image 2026-02-08 at 6 18 59 PM](https://github.com/user-attachments/assets/196fd259-32f0-4aaf-a1c1-b81a4dee00b3)
+
+![WhatsApp Image 2026-02-08 at 6 18 59 PM (1)](https://github.com/user-attachments/assets/50419910-806f-4fcb-bcb6-a84bf310140a)
+
+![WhatsApp Image 2026-02-08 at 6 18 59 PM (2)](https://github.com/user-attachments/assets/0d76cc2e-a037-4b9f-907e-51681332363d)
+
