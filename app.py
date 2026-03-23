@@ -1,12 +1,12 @@
 import streamlit as st
 import joblib
-import ollama
 import requests
+import os
 
 # -------------------------------------------------
-# Load trained model
+# Load trained model (FIXED PATH)
 # -------------------------------------------------
-model = joblib.load("C:\\Users\\nukal\\Downloads\\disease_model.joblib")
+model = joblib.load("disease_model.joblib")
 
 # -------------------------------------------------
 # Full symptom list (must match training)
@@ -46,7 +46,6 @@ ALL_SYMPTOMS = [
     'skin_peeling','silver_like_dusting','small_dents_in_nails',
     'inflammatory_nails','blister','red_sore_around_nose','yellow_crust_ooze'
 ]
-ALL_SYMPTOMS.append("unknown_symptom_placeholder")
 
 # -------------------------------------------------
 # Convert input to vector
@@ -56,13 +55,13 @@ def preprocess_symptoms(user_input):
     return [1 if symptom in user_symptoms else 0 for symptom in ALL_SYMPTOMS]
 
 # -------------------------------------------------
-# Fetch images dynamically
+# Secure API key (FIXED)
 # -------------------------------------------------
-SERP_API_KEY = "PASTE_YOUR_KEY_HERE"
+SERP_API_KEY = os.getenv("SERPAPI_KEY")
 
 def fetch_images(query, num_images=3):
     url = "https://serpapi.com/search.json"
-    params = {"q": query, "tbm": "isch", "api_key": "401fa36963fbe057b4e2204ad9b756894c4bfd67aa3d6b4b257da69734b249c7"}
+    params = {"q": query, "tbm": "isch", "api_key": SERP_API_KEY}
     response = requests.get(url, params=params)
     data = response.json()
     return [img["original"] for img in data.get("images_results", [])[:num_images]]
@@ -73,7 +72,7 @@ def fetch_images(query, num_images=3):
 st.set_page_config(page_title="Disease Prediction AI", layout="centered")
 
 st.title("🩺 AI-Based Disease Prediction System")
-st.write("Predict diseases and get AI-based explanations (No medical advice).")
+st.write("Predict diseases based on symptoms (For awareness only).")
 
 symptoms = st.text_area(
     "Enter your symptoms (comma separated):",
@@ -89,37 +88,18 @@ if st.button("Predict Disease"):
 
         st.success(f"🧠 Predicted Disease: **{predicted_disease}**")
 
-        prompt = f"""
-You are a medical awareness assistant.
+        # SIMPLE EXPLANATION (REPLACED OLLAMA)
+        st.subheader("📘 Basic Information")
+        st.write(f"""
+        - The predicted condition is **{predicted_disease}**
+        - This is based on the symptoms you provided
+        - This tool is for awareness only
+        - Please consult a doctor for proper diagnosis
+        """)
 
-Disease: {predicted_disease}
-User symptoms: {symptoms}
-
-Rules:
-- Simple English only
-- Bullet points only
-- No technical explanations
-- No diagnosis or treatment claims
-
-Respond in this format:
-1. What is the disease?
-2. Common symptoms
-3. Symptom match analysis
-4. Severity level
-5. Home remedies
-6. When to consult a doctor
-"""
-
-        response = ollama.chat(
-            model="phi",
-            messages=[{"role": "user", "content": prompt}]
-        )
-
-        st.subheader("📘 AI Explanation")
-        st.write(response["message"]["content"])
-
-        st.subheader("🖼️ Visual References (For Awareness Only)")
-        images = fetch_images(f"{predicted_disease} skin symptoms")
+        # Images
+        st.subheader("🖼️ Visual References")
+        images = fetch_images(f"{predicted_disease} symptoms")
 
         for img in images:
             st.image(img, width=250)
