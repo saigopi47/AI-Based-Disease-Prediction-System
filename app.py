@@ -9,9 +9,9 @@ import os
 model = joblib.load("disease_model.joblib")
 
 # -------------------------------------------------
-# Full symptom list (FIXED + 132 FEATURES)
+# Full symptom list (FIXED)
 # -------------------------------------------------
-ALL_SYMPTOMS = [ 
+ALL_SYMPTOMS = [
     'itching','skin_rash','nodal_skin_eruptions','continuous_sneezing','shivering',
     'chills','joint_pain','stomach_pain','acidity','ulcers_on_tongue',
     'muscle_wasting','vomiting','burning_micturition','spotting_urination',
@@ -47,25 +47,12 @@ ALL_SYMPTOMS = [
     'inflammatory_nails','blister','red_sore_around_nose','yellow_crust_ooze'
 ]
 
-# 🔥 ADD THIS (FINAL FIX)
-ALL_SYMPTOMS.append("extra_feature")   # this makes count = 132
-
 # -------------------------------------------------
-# Convert input to vector (SAFE)
+# Convert input to vector
 # -------------------------------------------------
 def preprocess_symptoms(user_input):
     user_symptoms = [s.strip().lower() for s in user_input.split(",")]
-
-    vector = []
-    for symptom in ALL_SYMPTOMS:
-        if symptom == "extra_feature":
-            vector.append(0)  # always 0
-        elif symptom in user_symptoms:
-            vector.append(1)
-        else:
-            vector.append(0)
-
-    return vector
+    return [1 if symptom in user_symptoms else 0 for symptom in ALL_SYMPTOMS]
 
 # -------------------------------------------------
 # API key
@@ -85,11 +72,11 @@ def fetch_images(query, num_images=3):
 st.set_page_config(page_title="Disease Prediction AI", layout="centered")
 
 st.title("🩺 AI-Based Disease Prediction System")
-st.write("Predict diseases (For awareness only)")
+st.write("Predict diseases and get basic explanation (No medical advice).")
 
 symptoms = st.text_area(
-    "Enter symptoms (comma separated):",
-    placeholder="itching, skin_rash"
+    "Enter your symptoms (comma separated):",
+    placeholder="itching, skin_rash, redness"
 )
 
 if st.button("Predict Disease"):
@@ -98,16 +85,24 @@ if st.button("Predict Disease"):
     else:
         input_data = preprocess_symptoms(symptoms)
 
+        # 🔥 SAFETY CHECK
         if len(input_data) != model.n_features_in_:
-            st.error(f"Mismatch: expected {model.n_features_in_}, got {len(input_data)}")
+            st.error(f"Feature mismatch: Model expects {model.n_features_in_}, got {len(input_data)}")
         else:
             predicted_disease = model.predict([input_data])[0]
 
-            st.success(f"🧠 Predicted Disease: {predicted_disease}")
+            st.success(f"🧠 Predicted Disease: **{predicted_disease}**")
 
-            st.subheader("📘 Info")
-            st.write(f"- Possible condition: {predicted_disease}")
+            st.subheader("📘 Basic Explanation")
+            st.write(f"""
+            - Possible condition: **{predicted_disease}**
+            - Based on your symptoms
+            - This is for awareness only
+            - Please consult a doctor
+            """)
 
+            st.subheader("🖼️ Visual References")
             images = fetch_images(f"{predicted_disease} symptoms")
+
             for img in images:
                 st.image(img, width=250)
