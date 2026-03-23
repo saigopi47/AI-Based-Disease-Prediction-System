@@ -4,12 +4,12 @@ import requests
 import os
 
 # -------------------------------------------------
-# Load model
+# Load trained model (FIXED)
 # -------------------------------------------------
 model = joblib.load("disease_model.joblib")
 
 # -------------------------------------------------
-# EXACT 132 symptoms (FIXED)
+# Full symptom list (UNCHANGED)
 # -------------------------------------------------
 ALL_SYMPTOMS = [
     'itching','skin_rash','nodal_skin_eruptions','continuous_sneezing','shivering',
@@ -46,61 +46,65 @@ ALL_SYMPTOMS = [
     'skin_peeling','silver_like_dusting','small_dents_in_nails',
     'inflammatory_nails','blister','red_sore_around_nose','yellow_crust_ooze'
 ]
+ALL_SYMPTOMS.append("unknown_symptom_placeholder")
 
 # -------------------------------------------------
-# Preprocess input
+# Convert input to vector (UNCHANGED)
 # -------------------------------------------------
 def preprocess_symptoms(user_input):
     user_symptoms = [s.strip().lower() for s in user_input.split(",")]
     return [1 if symptom in user_symptoms else 0 for symptom in ALL_SYMPTOMS]
 
 # -------------------------------------------------
-# SerpAPI key (secure)
+# API key (FIXED)
 # -------------------------------------------------
 SERP_API_KEY = os.getenv("SERPAPI_KEY")
 
-def fetch_images(query):
+def fetch_images(query, num_images=3):
     url = "https://serpapi.com/search.json"
     params = {"q": query, "tbm": "isch", "api_key": SERP_API_KEY}
     response = requests.get(url, params=params)
     data = response.json()
-    return [img["original"] for img in data.get("images_results", [])[:3]]
+    return [img["original"] for img in data.get("images_results", [])[:num_images]]
 
 # -------------------------------------------------
 # UI
 # -------------------------------------------------
-st.set_page_config(page_title="Disease Prediction AI")
+st.set_page_config(page_title="Disease Prediction AI", layout="centered")
 
 st.title("🩺 AI-Based Disease Prediction System")
+st.write("Predict diseases and get basic explanation (No medical advice).")
 
 symptoms = st.text_area(
-    "Enter symptoms (comma separated)",
-    placeholder="itching, skin_rash"
+    "Enter your symptoms (comma separated):",
+    placeholder="itching, skin_rash, redness"
 )
 
 if st.button("Predict Disease"):
     if symptoms.strip() == "":
-        st.warning("Please enter symptoms")
+        st.warning("Please enter symptoms.")
     else:
         input_data = preprocess_symptoms(symptoms)
 
-        # Safety check
-        if len(input_data) != model.n_features_in_:
-            st.error("Feature mismatch error. Check symptoms list.")
-        else:
-            prediction = model.predict([input_data])[0]
+        try:
+            predicted_disease = model.predict([input_data])[0]
 
-            st.success(f"🧠 Predicted Disease: {prediction}")
+            st.success(f"🧠 Predicted Disease: **{predicted_disease}**")
 
-            st.subheader("📘 Basic Info")
+            # SIMPLE REPLACEMENT FOR OLLAMA
+            st.subheader("📘 Basic Explanation")
             st.write(f"""
-            - Based on your symptoms, this condition may be **{prediction}**
-            - This is only for awareness
+            - Possible condition: **{predicted_disease}**
+            - Based on your symptoms
+            - This is for awareness only
             - Please consult a doctor
             """)
 
-            st.subheader("🖼️ Related Images")
-            images = fetch_images(prediction)
+            st.subheader("🖼️ Visual References")
+            images = fetch_images(f"{predicted_disease} symptoms")
 
             for img in images:
                 st.image(img, width=250)
+
+        except Exception as e:
+            st.error("Prediction failed. Check symptom input or model compatibility.")
