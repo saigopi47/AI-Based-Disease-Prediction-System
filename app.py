@@ -4,12 +4,12 @@ import requests
 import os
 
 # -------------------------------------------------
-# Load trained model (FIXED)
+# Load trained model
 # -------------------------------------------------
 model = joblib.load("disease_model.joblib")
 
 # -------------------------------------------------
-# Full symptom list (UNCHANGED)
+# Full symptom list (FIXED)
 # -------------------------------------------------
 ALL_SYMPTOMS = [
     'itching','skin_rash','nodal_skin_eruptions','continuous_sneezing','shivering',
@@ -46,17 +46,16 @@ ALL_SYMPTOMS = [
     'skin_peeling','silver_like_dusting','small_dents_in_nails',
     'inflammatory_nails','blister','red_sore_around_nose','yellow_crust_ooze'
 ]
-ALL_SYMPTOMS.append("unknown_symptom_placeholder")
 
 # -------------------------------------------------
-# Convert input to vector (UNCHANGED)
+# Convert input to vector
 # -------------------------------------------------
 def preprocess_symptoms(user_input):
     user_symptoms = [s.strip().lower() for s in user_input.split(",")]
     return [1 if symptom in user_symptoms else 0 for symptom in ALL_SYMPTOMS]
 
 # -------------------------------------------------
-# API key (FIXED)
+# API key
 # -------------------------------------------------
 SERP_API_KEY = os.getenv("SERPAPI_KEY")
 
@@ -86,12 +85,14 @@ if st.button("Predict Disease"):
     else:
         input_data = preprocess_symptoms(symptoms)
 
-        try:
+        # 🔥 SAFETY CHECK
+        if len(input_data) != model.n_features_in_:
+            st.error(f"Feature mismatch: Model expects {model.n_features_in_}, got {len(input_data)}")
+        else:
             predicted_disease = model.predict([input_data])[0]
 
             st.success(f"🧠 Predicted Disease: **{predicted_disease}**")
 
-            # SIMPLE REPLACEMENT FOR OLLAMA
             st.subheader("📘 Basic Explanation")
             st.write(f"""
             - Possible condition: **{predicted_disease}**
@@ -105,6 +106,3 @@ if st.button("Predict Disease"):
 
             for img in images:
                 st.image(img, width=250)
-
-        except Exception as e:
-            st.error("Prediction failed. Check symptom input or model compatibility.")
