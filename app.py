@@ -46,7 +46,7 @@ ALL_SYMPTOMS = [
     'skin_peeling','silver_like_dusting','small_dents_in_nails',
     'inflammatory_nails','blister','red_sore_around_nose','yellow_crust_ooze'
 ]
-
+ALL_SYMPTOMS.append("extra_feature")
 # -------------------------------------------------
 # Convert input to vector
 # -------------------------------------------------
